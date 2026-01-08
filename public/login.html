@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteSync - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            overflow: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(118, 75, 162, 0.15) 0%, transparent 50%);
+            animation: gradient-rotate 20s linear infinite;
+        }
+
+        @keyframes gradient-rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Container */
+        .container {
+            max-width: 420px;
+            width: 90%;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+            transform: translateX(-5px);
+        }
+
+        /* Auth Form */
+        .auth-form {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 45px 40px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-form::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            font-size: 1rem;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input:focus {
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-top: 15px;
+            box-shadow: none;
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .message {
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+            display: block;
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Logo */
+        .logo {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+            margin-bottom: 5px;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-form {
+                padding: 35px 25px;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+
+    <div class="container">
+        <a class="back-btn" onclick="window.location.href='index.html'">← Back to Home</a>
+
+        <!-- SIGN UP FORM -->
+        <div id="signupForm" class="auth-form">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">ByteSync</div>
+            </div>
+            <h1>Create Account</h1>
+            <p class="subtitle">Join thousands of developers collaborating in real-time</p>
+
+            <form onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="signupUsername" placeholder="Choose a username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a strong password" required>
+                </div>
+                <button type="submit">Create Account</button>
+                <button type="button" class="toggle-btn" onclick="toggleForms()">Already have account? Sign In</button>
+            </form>
+            <div id="signupMessage" class="message"></div>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="loginForm" class="auth-form hidden">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">ByteSync</div>
+            </div>
+            <h1>Welcome Back</h1>
+            <p class="subtitle">Sign in to continue to your dashboard</p>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit">Sign In</button>
+                <button type="button" class="toggle-btn" onclick="toggleForms()">Don't have account? Create One</button>
+            </form>
+            <div id="loginMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle between Sign Up and Login
+        function toggleForms() {
+            document.getElementById('signupForm').classList.toggle('hidden');
+            document.getElementById('loginForm').classList.toggle('hidden');
+            // Clear messages
+            document.getElementById('signupMessage').className = 'message';
+            document.getElementById('signupMessage').style.display = 'none';
+            document.getElementById('loginMessage').className = 'message';
+            document.getElementById('loginMessage').style.display = 'none';
+        }
+
+        // Handle Sign Up
+        async function handleSignup(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const messageDiv = document.getElementById('signupMessage');
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = '✅ Account created! Redirecting to login...';
+                    messageDiv.classList.remove('error');
+                    messageDiv.classList.add('success');
+                    messageDiv.style.display = 'block';
+                    setTimeout(() => toggleForms(), 2000);
+                } else {
+                    messageDiv.textContent = '❌ ' + (data.error || 'Registration failed');
+                    messageDiv.classList.remove('success');
+                    messageDiv.classList.add('error');
+                    messageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                messageDiv.textContent = '❌ Network error. Please try again.';
+                messageDiv.classList.add('error');
+                messageDiv.style.display = 'block';
+            }
+        }
+
+        // Handle Login
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const messageDiv = document.getElementById('loginMessage');
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = '✅ Login successful! Redirecting...';
+                    messageDiv.classList.remove('error');
+                    messageDiv.classList.add('success');
+                    messageDiv.style.display = 'block';
+                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('username', data.username);
+                    setTimeout(() => {
+                        window.location.href = '/create_join_room.html';
+                    }, 1500);
+                } else {
+                    messageDiv.textContent = '❌ ' + (data.error || 'Login failed');
+                    messageDiv.classList.remove('success');
+                    messageDiv.classList.add('error');
+                    messageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                messageDiv.textContent = '❌ Network error. Please try again.';
+                messageDiv.classList.add('error');
+                messageDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteSync - Collaborative Code Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            font-family: 'Inter', sans-serif;
+            background: #0f0c29;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header h1 span {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .room-info {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .room-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .room-id {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            color: #fff;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f39c12;
+            animation: pulse-status 1.5s infinite;
+        }
+
+        .status-dot.connected {
+            background: #2ecc71;
+        }
+
+        .status-dot.disconnected {
+            background: #e74c3c;
+            animation: none;
+        }
+
+        @keyframes pulse-status {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Collaborators */
+        .collaborators {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-count {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .collaborator-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .collaborator-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .collaborator-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .you-badge {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-left: auto;
+        }
+
+        /* File Actions */
+        .file-actions {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .action-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Editor Section */
+        .editor-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            padding: 12px 20px;
+            background: #252526;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toolbar-title {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .language-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .language-select option {
+            background: #252526;
+            color: #fff;
+        }
+
+        .toolbar-spacer {
+            flex: 1;
+        }
+
+        .toolbar-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .toolbar-btn.save {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .toolbar-btn.save:hover {
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        /* Editor */
+        #editor {
+            flex: 1;
+        }
+
+        /* Back to rooms */
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 15px 20px;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .back-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <a href="create_join_room.html" class="back-link">← Back to Rooms</a>
+
+            <div class="sidebar-header">
+                <h1>⚡ <span>ByteSync</span></h1>
+            </div>
+
+            <div class="room-info">
+                <div class="room-label">Room ID</div>
+                <div class="room-id">
+                    <span id="roomIdText">Loading...</span>
+                    <button class="copy-btn" onclick="copyRoomId()" title="Copy Room ID">📋</button>
+                </div>
+            </div>
+
+            <div class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+
+            <div class="collaborators">
+                <div class="section-title">
+                    Developers
+                    <span class="user-count" id="userCount">0</span>
+                </div>
+                <div id="collaboratorsList"></div>
+            </div>
+
+            <div class="file-actions">
+                <button class="action-btn primary" onclick="saveFile()">
+                    💾 Save File
+                </button>
+                <button class="action-btn secondary" onclick="document.getElementById('openFile').click()">
+                    📂 Open File
+                </button>
+                <input type="file" id="openFile" accept=".txt,.js,.py,.html,.css,.json,.md">
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <div class="toolbar">
+                <span class="toolbar-title">Language:</span>
+                <select class="language-select" id="languageSelect" onchange="changeLanguage()">
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="json">JSON</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                </select>
+                <div class="toolbar-spacer"></div>
+                <button class="toolbar-btn" onclick="document.getElementById('openFile').click()">📂 Open</button>
+                <button class="toolbar-btn save" onclick="saveFile()">💾 Save</button>
+            </div>
+            <div id="editor"></div>
+        </div>
+    </div>
+
+    <script>
+        let editor, socket, username, currentRoom;
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room') || 'default-room';
+
+        // Get username from localStorage or prompt
+        username = localStorage.getItem('username');
+        if (!username) {
+            username = prompt("Enter your name:") || "User";
+            localStorage.setItem('username', username);
+        }
+
+        // Display room ID
+        document.getElementById('roomIdText').textContent = roomId;
+        currentRoom = roomId;
+
+        function copyRoomId() {
+            navigator.clipboard.writeText(roomId);
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = '✓';
+            setTimeout(() => btn.textContent = '📋', 2000);
+        }
+
+        function initializeSocket() {
+            // Use relative URL for deployment compatibility
+            const socketUrl = window.location.hostname === 'localhost'
+                ? 'http://localhost:5000'
+                : window.location.origin;
+
+            socket = io(socketUrl);
+
+            socket.on('connect', () => {
+                document.getElementById('statusDot').classList.add('connected');
+                document.getElementById('statusDot').classList.remove('disconnected');
+                document.getElementById('statusText').textContent = 'Connected';
+                socket.emit('joinRoom', { roomId, username });
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('statusDot').classList.add('disconnected');
+                document.getElementById('statusDot').classList.remove('connected');
+                document.getElementById('statusText').textContent = 'Disconnected';
+            });
+
+            socket.on('updateUsers', ({ users }) => {
+                const list = document.getElementById('collaboratorsList');
+                document.getElementById('userCount').textContent = users.length;
+
+                list.innerHTML = users.map(user => `
+                    <div class="collaborator-item">
+                        <div class="avatar">${user.charAt(0).toUpperCase()}</div>
+                        <span class="collaborator-name">${user}</span>
+                        ${user === username ? '<span class="you-badge">(You)</span>' : ''}
+                    </div>
+                `).join('');
+            });
+
+            socket.on('codeUpdate', ({ code }) => {
+                if (editor && editor.getValue() !== code) {
+                    const position = editor.getPosition();
+                    editor.setValue(code);
+                    editor.setPosition(position);
+                }
+            });
+        }
+
+        function initializeEditor() {
+            require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } });
+            require(['vs/editor/editor.main'], function () {
+                editor = monaco.editor.create(document.getElementById('editor'), {
+                    value: '// Welcome to ByteSync! 🚀\n// Start coding and collaborate in real-time.\n\nconsole.log("Hello, ByteSync!");\n',
+                    language: 'javascript',
+                    theme: 'vs-dark',
+                    fontSize: 14,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    minimap: { enabled: true },
+                    automaticLayout: true,
+                    padding: { top: 15 },
+                    scrollBeyondLastLine: false,
+                    smoothScrolling: true,
+                    cursorBlinking: 'smooth',
+                    cursorSmoothCaretAnimation: 'on'
+                });
+
+                let timeout;
+                editor.onDidChangeModelContent(() => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        socket.emit('codeChange', { roomId, code: editor.getValue() });
+                    }, 100);
+                });
+            });
+        }
+
+        function changeLanguage() {
+            const language = document.getElementById('languageSelect').value;
+            if (editor) {
+                monaco.editor.setModelLanguage(editor.getModel(), language);
+            }
+        }
+
+        function saveFile() {
+            const language = document.getElementById('languageSelect').value;
+            const extensions = {
+                javascript: 'js',
+                python: 'py',
+                html: 'html',
+                css: 'css',
+                json: 'json',
+                typescript: 'ts',
+                java: 'java',
+                cpp: 'cpp'
+            };
+
+            const blob = new Blob([editor.getValue()], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `bytesync-code.${extensions[language] || 'txt'}`;
+            a.click();
+        }
+
+        document.getElementById('openFile').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    editor.setValue(e.target.result);
+
+                    // Auto-detect language from extension
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const langMap = {
+                        js: 'javascript',
+                        py: 'python',
+                        html: 'html',
+                        css: 'css',
+                        json: 'json',
+                        ts: 'typescript',
+                        java: 'java',
+                        cpp: 'cpp',
+                        c: 'cpp'
+                    };
+
+                    if (langMap[ext]) {
+                        document.getElementById('languageSelect').value = langMap[ext];
+                        changeLanguage();
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        initializeSocket();
+        initializeEditor();
+    </script>
+</body>
+
+</html>

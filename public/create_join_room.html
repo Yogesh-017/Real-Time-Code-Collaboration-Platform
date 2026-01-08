@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteSync - Create or Join Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            overflow: hidden;
+        }
+
+        /* Animated Background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+
+        .bg-gradient::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(102, 126, 234, 0.15) 0%, transparent 50%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Floating Orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(102, 126, 234, 0.3);
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(118, 75, 162, 0.3);
+            bottom: -50px;
+            left: -50px;
+            animation-delay: 2s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-30px) scale(1.05);
+            }
+        }
+
+        /* Container */
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 50px 40px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Username Display */
+        .username-display {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .username-display span {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .username-display strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Room Options */
+        .room-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Buttons */
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            gap: 15px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .divider span {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Input */
+        input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input:focus {
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        }
+
+        /* Room ID Display */
+        .room-id-display {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-top: 15px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .room-id-display.show {
+            display: flex;
+        }
+
+        .room-id-display .id {
+            font-family: 'Monaco', 'Consolas', monospace;
+            color: #2ecc71;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .copy-btn {
+            background: rgba(46, 204, 113, 0.3);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(46, 204, 113, 0.5);
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Back Link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #fff;
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-gradient"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Home</a>
+
+        <div class="header">
+            <div class="logo">🚀</div>
+            <h1>Ready to Collaborate?</h1>
+            <p class="subtitle">Create a new room or join an existing one to start coding together in real-time.</p>
+        </div>
+
+        <div class="username-display" id="usernameDisplay">
+            <span>👤 Logged in as:</span>
+            <strong id="usernameText">User</strong>
+        </div>
+
+        <div class="room-options">
+            <button id="createRoomBtn">
+                <span>✨</span> Create New Room
+            </button>
+
+            <div class="room-id-display" id="roomIdDisplay">
+                <span class="id" id="generatedRoomId"></span>
+                <button class="copy-btn" onclick="copyRoomId()">Copy</button>
+            </div>
+
+            <div class="divider">
+                <span>or join existing</span>
+            </div>
+
+            <input type="text" id="roomId" placeholder="Enter Room ID (e.g., abc12345)">
+            <button id="joinRoomBtn" class="btn-secondary">
+                <span>🔗</span> Join Room
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Display username from localStorage
+        const username = localStorage.getItem('username') || 'Guest';
+        document.getElementById('usernameText').textContent = username;
+
+        let generatedRoom = null;
+
+        document.getElementById("createRoomBtn").addEventListener("click", () => {
+            const roomId = Math.random().toString(36).substr(2, 8);
+            generatedRoom = roomId;
+
+            const display = document.getElementById('roomIdDisplay');
+            document.getElementById('generatedRoomId').textContent = roomId;
+            display.classList.add('show');
+
+            // Auto redirect after showing room ID
+            setTimeout(() => {
+                window.location.href = `monaco-editor-page.html?room=${roomId}`;
+            }, 1500);
+        });
+
+        document.getElementById("joinRoomBtn").addEventListener("click", () => {
+            const roomId = document.getElementById("roomId").value.trim();
+            if (roomId) {
+                window.location.href = `monaco-editor-page.html?room=${roomId}`;
+            } else {
+                // Shake animation for empty input
+                const input = document.getElementById("roomId");
+                input.style.animation = 'shake 0.5s ease';
+                input.style.borderColor = '#e74c3c';
+                setTimeout(() => {
+                    input.style.animation = '';
+                    input.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                }, 500);
+            }
+        });
+
+        // Enter key support
+        document.getElementById("roomId").addEventListener("keypress", (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById("joinRoomBtn").click();
+            }
+        });
+
+        function copyRoomId() {
+            if (generatedRoom) {
+                navigator.clipboard.writeText(generatedRoom);
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            }
+        }
+    </script>
+
+    <style>
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+    </style>
+</body>
+
+</html>
