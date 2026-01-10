@@ -161,5 +161,5 @@ Push to the Branch (git push origin feature/AmazingFeature)
 Open a Pull Request
 
 <div align="center">
-<p>Made with ❤️ by Yogesh</p>
+<p>Made with ❤️ by Yogesh,Tushar,vedant and bhagyesh.</p>
 </div>
